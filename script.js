@@ -1,55 +1,52 @@
-const apiBase = "https://www.themealdb.com/api/json/v1/1";
+async function loadDefaultMeals() {
+    const response = await fetch('https://www.themealdb.com/api/json/v1/1/search.php?s=');
+    const data = await response.json();
+    const mealResults = document.getElementById('meal-results');
+    mealResults.innerHTML = '';
 
-function searchMeals() {
-    const query = document.getElementById('search-input').value;
-    if (query) {
-        fetch(`${apiBase}/search.php?s=${query}`)
-            .then(response => response.json())
-            .then(data => {
-                const mealResults = document.getElementById('meal-results');
-                mealResults.innerHTML = '';
-                if (data.meals) {
-                    data.meals.forEach(meal => {
-                        mealResults.innerHTML += `
-                            <div class="meal-card" style="cursor: pointer;" onclick="showMealDetails(${meal.idMeal})">
-                                <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
-                                <div>
-                                    <h5 class="card-title">${meal.strMeal}</h5>
-                                </div>
-                            </div>
-                        `;
-                    });
-                } else {
-                    mealResults.innerHTML = '<p>No meals found.</p>';
-                }
-            })
-            .catch(error => console.error('Error fetching data:', error));
-    }
-}
-
-
-function showMealDetails(mealId) {
-    fetch(`${apiBase}/lookup.php?i=${mealId}`)
-        .then(response => response.json())
-        .then(data => {
-            const meal = data.meals[0];
-            const mealDetails = document.getElementById('meal-details');
-            mealDetails.style.display = 'block';
-            mealDetails.innerHTML = `
-                <img src="${meal.strMealThumb}" alt="${meal.strMeal}" class="mb-3">
-                <h3>${meal.strMeal}</h3>
-                <p><strong>Ingredients:</strong> ${getIngredients(meal)}</p>
-            `;
+    if (data.meals) {
+        data.meals.forEach(meal => {
+            const mealCard = document.createElement('div');
+            mealCard.className = 'meal-card';
+            mealCard.innerHTML = `<img src="${meal.strMealThumb}" alt="${meal.strMeal}">
+                                  <h3>${meal.strMeal}</h3>
+                                  <button onclick="showMealDetails('${meal.idMeal}')" class="btn btn-secondary mt-2">View Details</button>`;
+            mealResults.appendChild(mealCard);
         });
+    } else {
+        mealResults.innerHTML = '<p>No meals available.</p>';
+    }
 }
 
+async function searchMeals() {
+    const searchInput = document.getElementById('search-input').value;
+    const response = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${searchInput}`);
+    const data = await response.json();
+    const mealResults = document.getElementById('meal-results');
+    mealResults.innerHTML = '';
 
-function getIngredients(meal) {
-    let ingredients = [];
-    for (let i = 1; i <= 20; i++) {
-        if (meal[`strIngredient${i}`] && meal[`strIngredient${i}`] !== '') {
-            ingredients.push(`${meal[`strIngredient${i}`]} (${meal[`strMeasure${i}`]})`);
-        }
+    if (data.meals) {
+        data.meals.forEach(meal => {
+            const mealCard = document.createElement('div');
+            mealCard.className = 'meal-card';
+            mealCard.innerHTML = `<img src="${meal.strMealThumb}" alt="${meal.strMeal}">
+                                  <h3>${meal.strMeal}</h3>
+                                  <button onclick="showMealDetails('${meal.idMeal}')" class="btn btn-secondary mt-2">View Details</button>`;
+            mealResults.appendChild(mealCard);
+        });
+    } else {
+        mealResults.innerHTML = '<p>No meals found.</p>';
     }
-    return ingredients.join(', ');
+}
+
+async function showMealDetails(mealId) {
+    const response = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${mealId}`);
+    const data = await response.json();
+    const meal = data.meals[0];
+    const mealDetails = document.getElementById('meal-details');
+    mealDetails.innerHTML = `<h2>${meal.strMeal}</h2>
+                            <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
+                            <p><strong>Category:</strong> ${meal.strCategory}</p>
+                            <p><strong>Instructions:</strong> ${meal.strInstructions}</p>`;
+    mealDetails.style.display = 'block';
 }
